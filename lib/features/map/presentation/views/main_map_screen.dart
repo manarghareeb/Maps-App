@@ -21,6 +21,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
   LatLng? startPoint;
   LatLng? endPoint;
   List<LatLng> routePoints = [];
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -35,9 +36,6 @@ class _MainMapScreenState extends State<MainMapScreen> {
         children: [
           BlocBuilder<MapCubit, MapState>(
             builder: (context, mapState) {
-              if (mapState is MapLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
               if (mapState is MapSuccess && startPoint == null) {
                 startPoint = LatLng(
                   mapState.location.latitude,
@@ -128,10 +126,32 @@ class _MainMapScreenState extends State<MainMapScreen> {
       floatingActionButton: FloatingActionButton(
         heroTag: "loc_btn",
         backgroundColor: Colors.white,
-        onPressed: () {
-          context.read<MapCubit>().fetchCurrentLocation();
+        onPressed: () async {
+          setState(() {
+            isLoading = true;
+          });
+          final mapState = context.read<MapCubit>().state;
+          if (mapState is MapSuccess) {
+            final currentLat = mapState.location.latitude;
+            final currentLng = mapState.location.longitude;
+            final currentLocation = LatLng(currentLat, currentLng);
+
+            await Future.delayed(const Duration(milliseconds: 500));
+            mapController.move(currentLocation, 15.0);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Waiting for current location...'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          setState(() {
+            isLoading = false;
+          });
         },
-        child: const Icon(Icons.my_location, color: Colors.blue),
+        child: isLoading ? const Center(child: CircularProgressIndicator(color: Colors.blue,))
+        : const Icon(Icons.my_location, color: Colors.blue),
       ),
     );
   }
@@ -174,7 +194,6 @@ class _MainMapScreenState extends State<MainMapScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Waiting for current location...'),
-          backgroundColor: Colors.red,
         ),
       );
     }

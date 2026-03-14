@@ -6,7 +6,8 @@ import 'package:maps_app/core/cache/cache_helper.dart';
 import 'package:maps_app/features/map/data/data_sources/map_remote_data_source.dart';
 import 'package:maps_app/features/map/data/repositories/user_location_repository_impl.dart';
 import 'package:maps_app/features/map/domain/repositories/user_location_repository.dart';
-import 'package:maps_app/features/map/domain/usecases/fetch_route_osrm_usecase%20.dart';
+import 'package:maps_app/features/map/domain/usecases/fetch_route_osrm_usecase.dart';
+import 'package:maps_app/features/map/domain/usecases/get_address_from_latlng_usecase.dart';
 import 'package:maps_app/features/map/domain/usecases/get_current_location_usecase.dart';
 import 'package:maps_app/features/map/domain/usecases/get_directions_usecase.dart';
 import 'package:maps_app/features/map/presentation/cubit/directions_cubit/directions_cubit.dart';
@@ -39,6 +40,7 @@ void initServiceLocator() {
   );
   sl.registerLazySingleton(() => GetDirectionsUseCase(repository: sl()));
   sl.registerLazySingleton(() => FetchRouteFromOSRMUseCase(repository: sl()));
+  sl.registerLazySingleton(() => GetAddressFromLatlngUsecase(repository: sl()));
 
   /// DataSources
   sl.registerLazySingleton<SearchRemoteDataSource>(
@@ -52,7 +54,7 @@ void initServiceLocator() {
   );
 
   // Cubit
-  sl.registerFactory(() => MapCubit(getCurrentLocationUseCase: sl()));
+  sl.registerFactory(() => MapCubit(getCurrentLocationUseCase: sl(), getAddressFromLatLngUseCase: sl()));
   sl.registerFactory(
     () => SearchCubit(
       searchUseCase: sl(),

@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:maps_app/features/map/domain/usecases/fetch_route_osrm_usecase%20.dart';
+import 'package:maps_app/features/map/domain/usecases/fetch_route_osrm_usecase.dart';
 import 'package:maps_app/features/map/domain/usecases/get_directions_usecase.dart';
 import 'package:maps_app/features/map/presentation/cubit/directions_cubit/directions_state.dart';
 

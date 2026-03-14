@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:maps_app/core/errors/failures.dart';
@@ -79,4 +80,17 @@ class UserLocationRepositoryImpl implements UserLocationRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, String>> getAddressFromLatLng(LatLng position) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        return Right("${place.street}, ${place.locality}");
+      }
+      return Left(ServerFailure("Address not found"));
+    } catch (e) {
+      return Left(ServerFailure("Failed to get address"));
+    }
+  }
 }

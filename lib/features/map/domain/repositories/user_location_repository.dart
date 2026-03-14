@@ -8,4 +8,5 @@ abstract class UserLocationRepository {
   Future<Either<Failure, UserLocationEntity>> getCurrentLocation();
   Future<Either<Failure, DirectionEntity>> getDirections(LatLng start, LatLng end);
   Future<Either<Failure, List<LatLng>>> fetchRouteFromOSRM(LatLng start, LatLng end);
+  Future<Either<Failure, String>> getAddressFromLatLng(LatLng position);
 }

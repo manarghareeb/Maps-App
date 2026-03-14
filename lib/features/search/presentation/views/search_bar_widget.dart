@@ -18,96 +18,134 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
   final TextEditingController searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SearchCubit>().loadHistory();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5)],
-          ),
-          child: TextField(
-            controller: searchController,
-            onTap: () {
-              if (searchController.text.isEmpty) {
-                context.read<SearchCubit>().loadHistory();
-              }
-            },
-            onChanged: (query) {
-              const duration = Duration(milliseconds: 500);
-              debouncer.debounce(duration: duration, onDebounce: () {
-                context.read<SearchCubit>().searchPlaces(query);
-              });
-            },
-            decoration: const InputDecoration(
-              hintText: 'Search for a location',
-              border: InputBorder.none,
-              icon: Icon(Icons.search, color: Colors.blue),
-            ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 5),
+                  ],
+                ),
+                child: TextField(
+                  controller: searchController,
+                  onTap: () {
+                    if (searchController.text.isEmpty) {
+                      context.read<SearchCubit>().loadHistory();
+                    }
+                  },
+                  onChanged: (query) {
+                    const duration = Duration(milliseconds: 500);
+                    debouncer.debounce(
+                      duration: duration,
+                      onDebounce: () {
+                        context.read<SearchCubit>().searchPlaces(query);
+                      },
+                    );
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search for a location',
+                    border: InputBorder.none,
+                    icon: IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: BlocBuilder<SearchCubit, SearchState>(
+                  builder: (context, state) {
+                    if (state is SearchLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (state is SearchSuccess &&
+                        state.places.isNotEmpty) {
+                      return SearchListView(
+                        places: state.places,
+                        icon: Icons.location_on,
+                        onTap: (place) {
+                          _handleSelection(place);
+                        },
+                      );
+                    } else if (state is SearchInitial &&
+                        state.showHistory &&
+                        state.history.isNotEmpty) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 10,
+                            ),
+                            child: Text(
+                              "Recent Searches",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: SearchListView(
+                              places: state.history,
+                              icon: Icons.history,
+                              onTap: (place) => _handleSelection(place),
+                              onDelete: (place) {
+                                context.read<SearchCubit>().removeFromHistory(
+                                  place,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    } else if (state is SearchError) {
+                      return Center(
+                        child: Text(
+                          state.message,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 5),
-        BlocBuilder<SearchCubit, SearchState>(
-          builder: (context, state) {
-            if (state is SearchLoading) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            } else if (state is SearchSuccess && state.places.isNotEmpty) {
-              return SearchListView(
-                places: state.places,
-                icon: Icons.location_on,
-                onTap: (place) {
-                  final double lat = place.lat;
-                  final double lon = place.lng;
-                  context.read<SearchCubit>().addToHistory(place);
-                  context.read<SearchCubit>().clearSearch();
-                  searchController.clear();
-                  FocusScope.of(context).unfocus();
-                  widget.onPlaceSelected?.call(place.name, lat, lon);
-                },
-              );
-            } else if (state is SearchInitial &&
-                state.showHistory &&
-                state.history.isNotEmpty) {
-              return SearchListView(
-                places: state.history,
-                icon: Icons.history,
-                onTap: (place) {
-                  final double lat = place.lat;
-                  final double lon = place.lng;
-                  context.read<SearchCubit>().addToHistory(place);
-                  context.read<SearchCubit>().clearSearch();
-                  searchController.clear();
-                  FocusScope.of(context).unfocus();
-                  widget.onPlaceSelected?.call(place.name, lat, lon);
-                },
-                onDelete: (place) {
-                  context.read<SearchCubit>().removeFromHistory(place);
-                },
-              );
-            } else if (state is SearchError) {
-              return Container(
-                padding: const EdgeInsets.all(8),
-                color: Colors.white,
-                child: Text(
-                  state.message,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              );
-            } else if (state is SearchCleared) {
-              return const SizedBox.shrink();
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-      ],
+      ),
     );
+  }
+
+  void _handleSelection(dynamic place) {
+    context.read<SearchCubit>().addToHistory(place);
+    /*context.read<SearchCubit>().clearSearch();
+    searchController.clear();
+    FocusScope.of(context).unfocus();*/
+    Navigator.pop(context, {
+      'name': place.name,
+      'lat': place.lat,
+      'lng': place.lng,
+    });
   }
 }

@@ -19,18 +19,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      home: MultiBlocProvider(
-        providers: [
-          BlocProvider(
-            create: (context) => sl<MapCubit>(),
-          ),
-          BlocProvider(create: (context) => sl<SearchCubit>()),
-          BlocProvider(create: (context) => sl<DirectionsCubit>())
-        ],
-        child: const MainMapScreen(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => sl<MapCubit>()),
+        BlocProvider(create: (context) => sl<SearchCubit>()),
+        BlocProvider(create: (context) => sl<DirectionsCubit>()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Maps App',
+        home: const MainMapScreen(),
       ),
     );
   }
